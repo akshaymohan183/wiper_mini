@@ -17,16 +17,14 @@ EICRA |=(1<<ISC00);
 EICRA &=~(1<<ISC01);
 
 
-sei();               //Global interrupt enable
+sei();              
   
   while(1)
   {
-    ADCSRA |=(1<<ADSC);
-    //value = map(ADC,0,1024,0,254);
-    
+    ADCSRA |=(1<<ADSC);  
     if (flag==1)
     {
-      TIMSK0 |= (1<<OCIE0A)|(1<<OCIE0B);//PWM on  
+      TIMSK0 |= (1<<OCIE0A)|(1<<OCIE0B);  
     Serial.println(value);
     OCR0B = value;
     if(value>=1 && value<=85)
@@ -63,16 +61,15 @@ sei();               //Global interrupt enable
       CLR_BIT(PORTB,PB1);
       CLR_BIT(PORTB,PB3);
       CLR_BIT(PORTB,PB4);
-		TIMSK0 &=~ (1<<OCIE0A)|(1<<OCIE0B);      //PWM off
+		TIMSK0 &=~ (1<<OCIE0A)|(1<<OCIE0B);  
     }
   }
 }
 
-//--------------ADC interrupt ------------------------------------
 ISR(ADC_vect)
 {
  value = map(ADC,0,1024,0,254);
-  //value=ADC;
+  
 }
 
 
@@ -88,25 +85,22 @@ void ADC_setup()
 
 void PWM_setup()
 {
-	//OUTPUT PIN SETUP--------------------------------------------------------------
-	SET_BIT(DDRB,PB2);
-	//DDRB|=(1<<PB2); 			//DIRECTION IS SET FOR OSCILLOSCOPE-output-dig 10
-	CLR_BIT(PORTB,PB2);
-    //PORTB &=~(1<<PB2);			//INITIALISED TO VALUE LOW
-	//-------------------------------------------------------------------------------
-	//Timer 0 SETUP REGISTER --------------------------------------------------------
-	TCCR0A|=(1<<WGM01);
-	TCCR0B|=(1<<CS02)|(1<<CS00);//SETTING OF TCM CPNTROL REGISTER B (PRESCALER)
-	//COMPARE REGISTER SETUP ---------------------------------------------------------
-	OCR0A=0xFF; 				//TC0 Output Compare Register A
-	OCR0B= 0X80;				//50% DUTY CYCLE--
-	/* VARY OCR0B VALUE TO CHANGE PW OF PWM ACCORDINGLY*/
 	
-	//-------------MASK for interrupt ---------------------------------------------
+	SET_BIT(DDRB,PB2);
+				
+	CLR_BIT(PORTB,PB2);
+    
+	
+	TCCR0A|=(1<<WGM01);
+	TCCR0B|=(1<<CS02)|(1<<CS00);
+	
+	OCR0A=0xFF; 				
+	OCR0B= 0X80;				
+	
  	 TIMSK0 &=~ (1<<OCIE0A)|(1<<OCIE0B);
-	//-----------------------------------------------------------------------------
+	
 };
-//-------------INTERRUPT ROUTIN FOR CHANGE OF PULSE-----------------------------------
+
 ISR(TIMER0_COMPA_vect)
 {
   SET_BIT(PORTB,PB2);
@@ -115,13 +109,13 @@ ISR(TIMER0_COMPA_vect)
 ISR(TIMER0_COMPB_vect)
 {
   CLR_BIT(PORTB,PB2);
-  //PORTB	&=~(1<<PB2); //interrupt called in for output
+  
 }
-//-------------------Timer 0 ISR----------------------------------------------------------------
+
 ISR(INT0_vect)
 {
 
 OCR0B = 0x00;
 flag =!flag;
 }
-//-------------------End------------------------------
+
