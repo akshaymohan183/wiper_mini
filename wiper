@@ -1,0 +1,131 @@
+#include<avr/io.h>
+#include<avr/interrupt.h>
+//----------Global variable Declaration--------------------------
+volatile unsigned int value;
+volatile unsigned int flag;
+#define SET_BIT(PORT,PIN)  PORT |= (1<<PIN)
+#define CLR_BIT(PORT,PIN)  PORT &= ~(1<<PIN)
+
+//----------Main Function----------------------------------------
+int main()
+{
+PWM_setup();
+ADC_setup();
+//DDRB = 0xFF;
+SET_BIT(DDRB,PB4); 
+SET_BIT(DDRB,PB1); 
+ SET_BIT(DDRB,PB3); 
+Serial.begin(9600);
+EIMSK |=(1<<INT0);
+EICRA |=(1<<ISC00);
+EICRA &=~(1<<ISC01);
+
+
+sei();               //Global interrupt enable
+  
+  while(1)
+  {
+    ADCSRA |=(1<<ADSC);
+    //value = map(ADC,0,1024,0,254);
+    
+    if (flag==1)
+    {
+      TIMSK0 |= (1<<OCIE0A)|(1<<OCIE0B);//PWM on  
+    Serial.println(value);
+    OCR0B = value;
+    if(value>=1 && value<=85)
+    {
+      SET_BIT(PORTB,PB1);
+      CLR_BIT(PORTB,PB3);
+      CLR_BIT(PORTB,PB4);
+      
+    }
+    else if (value>=86 && value<=170)
+    {
+      SET_BIT(PORTB,PB3);
+      CLR_BIT(PORTB,PB1);
+      CLR_BIT(PORTB,PB4);
+    
+    }
+    else if (value>=171 && value<=254)
+    {
+      SET_BIT(PORTB,PB4);
+      CLR_BIT(PORTB,PB1);
+      CLR_BIT(PORTB,PB3);
+     
+    }
+    else
+    {
+      CLR_BIT(PORTB,PB1);
+      CLR_BIT(PORTB,PB3);
+      CLR_BIT(PORTB,PB4);
+    }
+      
+    }
+    else 
+    {
+      CLR_BIT(PORTB,PB1);
+      CLR_BIT(PORTB,PB3);
+      CLR_BIT(PORTB,PB4);
+		TIMSK0 &=~ (1<<OCIE0A)|(1<<OCIE0B);      //PWM off
+    }
+  }
+}
+
+//--------------ADC interrupt ------------------------------------
+ISR(ADC_vect)
+{
+ value = map(ADC,0,1024,0,254);
+  //value=ADC;
+}
+
+
+void ADC_setup()
+{
+  CLR_BIT(DDRC,PC1);
+  
+  ADMUX = 0b00000001;
+  ADCSRA |=(1<<ADEN)|(1<<ADIE);
+ 
+}
+
+
+void PWM_setup()
+{
+	//OUTPUT PIN SETUP--------------------------------------------------------------
+	SET_BIT(DDRB,PB2);
+	//DDRB|=(1<<PB2); 			//DIRECTION IS SET FOR OSCILLOSCOPE-output-dig 10
+	CLR_BIT(PORTB,PB2);
+    //PORTB &=~(1<<PB2);			//INITIALISED TO VALUE LOW
+	//-------------------------------------------------------------------------------
+	//Timer 0 SETUP REGISTER --------------------------------------------------------
+	TCCR0A|=(1<<WGM01);
+	TCCR0B|=(1<<CS02)|(1<<CS00);//SETTING OF TCM CPNTROL REGISTER B (PRESCALER)
+	//COMPARE REGISTER SETUP ---------------------------------------------------------
+	OCR0A=0xFF; 				//TC0 Output Compare Register A
+	OCR0B= 0X80;				//50% DUTY CYCLE--
+	/* VARY OCR0B VALUE TO CHANGE PW OF PWM ACCORDINGLY*/
+	
+	//-------------MASK for interrupt ---------------------------------------------
+ 	 TIMSK0 &=~ (1<<OCIE0A)|(1<<OCIE0B);
+	//-----------------------------------------------------------------------------
+};
+//-------------INTERRUPT ROUTIN FOR CHANGE OF PULSE-----------------------------------
+ISR(TIMER0_COMPA_vect)
+{
+  SET_BIT(PORTB,PB2);
+};
+
+ISR(TIMER0_COMPB_vect)
+{
+  CLR_BIT(PORTB,PB2);
+  //PORTB	&=~(1<<PB2); //interrupt called in for output
+}
+//-------------------Timer 0 ISR----------------------------------------------------------------
+ISR(INT0_vect)
+{
+
+OCR0B = 0x00;
+flag =!flag;
+}
+//-------------------End------------------------------
