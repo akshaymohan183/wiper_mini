@@ -1,17 +1,13 @@
 #include<avr/io.h>
 #include<avr/interrupt.h>
-//----------Global variable Declaration--------------------------
 volatile unsigned int value;
 volatile unsigned int flag;
 #define SET_BIT(PORT,PIN)  PORT |= (1<<PIN)
 #define CLR_BIT(PORT,PIN)  PORT &= ~(1<<PIN)
-
-//----------Main Function----------------------------------------
 int main()
 {
 PWM_setup();
 ADC_setup();
-//DDRB = 0xFF;
 SET_BIT(DDRB,PB4); 
 SET_BIT(DDRB,PB1); 
  SET_BIT(DDRB,PB3); 
